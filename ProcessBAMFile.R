@@ -1,4 +1,12 @@
-WorkDir = "~/Dropbox/coChIP-scripts"
+#!/usr/bin/env Rscript --vanilla
+#WorkDir = "~/Dropbox/coChIP-scripts"
+#Find where are the scripts at
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- 
+script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
+WorkDir <- dirname(script.name)
+
+
 DataDir = getwd()
 OrigDir = getwd()
 BamDir = paste0(DataDir,"/BAM")
