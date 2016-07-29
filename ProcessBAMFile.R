@@ -46,7 +46,9 @@ option_list = list(
   make_option(c("-m", "--metagene"), action = "store_true", type="logical", default=FALSE, 
               help="plot metagene"),
   make_option(c("-N", "--NucFile"), type="character", default=NULL,
-              help="Collect nucleosome counts to specified file"),
+              help="Collect nucleosome counts to specified RDATA file"),
+  make_option(c("--Nucsummary"), type="character", default=NULL,
+              help="Collect nucleosome counts to specified CSV file"),
   make_option(c("-S", "--QCsummary"), type="character", default=NULL, 
               help="Summarize QC to specificed file"),
   make_option(c("--sizes"),type="character", default="1,1000", 
@@ -147,6 +149,13 @@ if( !is.null(opt$options$NucFile)) {
   params$nuc = TRUE
 }
 
+
+doNucsCSV = FALSE
+if( !is.null(opt$options$Nucsummary)) {
+  doNucsCSV = TRUE
+  NucCSVFN = opt$options$Nucsummary
+  params$nuc = TRUE
+}
 doGeneSheets = FALSE
 if( !is.null(opt$options$genesheet)) {
   doGeneSheets = TRUE
@@ -176,7 +185,7 @@ DoProcessFile <- function( x ) {
     s = QCSummaryRanges(d$GR, QCSizeRanges)
     QCSummary[[d$Name]] <<- s
   }
-  if( doNucs ) {
+  if( doNucs || doNucsCSV ) {
     Nucs[[d$Name]] <<- d$nuc
   }
   
@@ -203,3 +212,11 @@ if( doNucs ) {
   rownames(Ns) = names(Nucs)
   saveRDS(Ns, file = extendDir(NucFN))
 }
+
+if( doNucsCSV ) {
+  Ns = do.call(rbind, Nucs)
+  rownames(Ns) = names(Nucs)
+  write.csv(Ns, file = extendDir(NucCSVFN),quote = FALSE)
+}
+
+
