@@ -25,26 +25,28 @@ suppressMessages(library("optparse"))
 option_list = list(
   make_option(c("-q", "--QC"), action = "store_true", type="logical", default=FALSE, 
               help="run QC"),
-  make_option(c("-F", "--force"), action = "store_true", type="logical", default=FALSE, 
-              help="force recomputing"),
-  make_option(c("-N", "--NucFile"), type="character", default=NULL,
-              help="Collect nucleosome counts"),
-  make_option(c("-S", "--QCsummary"), type="character", default=NULL, 
-              help="Summarize QC file"),
-  make_option(c("-x", "--genesheet"), type="character", default=NULL, 
-              help="Generate genesheets"),
-  make_option(c("--sizes"),type="character", default="1,1000", 
-              help="Comma seperated list of fragment sizes for QC summary"),
-  make_option(c("-m", "--metagene"), action = "store_true", type="logical", default=FALSE, 
-              help="plot metagene"),
   make_option(c("-c", "--coverage"), action = "store_true", type="logical", default=FALSE, 
               help="compute coverage"),
   make_option(c("-C", "--centers"), action = "store_true", type="logical", default=FALSE, 
               help="compute coverage of centers"),
   make_option(c("-n", "--nucleosomes"), action = "store_true", type="logical", default=FALSE, 
               help="compute over nucleosome positions"),
+  make_option(c("-x", "--genesheet"), type="character", default=NULL, 
+              help="Generate genesheets"),
+  make_option(c("-T", "--tracks"), action = "store_true", type="logical", default=FALSE, 
+              help="generate browser tracks"),
+  make_option(c("-m", "--metagene"), action = "store_true", type="logical", default=FALSE, 
+              help="plot metagene"),
+  make_option(c("-N", "--NucFile"), type="character", default=NULL,
+              help="Collect nucleosome counts to specified file"),
+  make_option(c("-S", "--QCsummary"), type="character", default=NULL, 
+              help="Summarize QC to specificed file"),
+  make_option(c("--sizes"),type="character", default="1,1000", 
+              help="Comma seperated list of fragment sizes for QC summary"),
   make_option("--centerwidth", type = "integer", default = 50,
               help="width of center window"),
+  make_option("--tilewidth", type = "integer", default = 10,
+              help="track tile width length"),
   make_option("--nucwidth", type = "integer", default = 150,
               help="width of nucleosome window"),
   make_option("--maxfraglen", type = "integer", default = 600,
@@ -57,8 +59,14 @@ option_list = list(
               help="location of BAM files" ),
   make_option("--QCdir", type="character", default=NULL,
               help="location to write QC files" ),
-  make_option("--Metadir", type="character", default=NULL,
-              help="location to write metagene files" )
+  make_option("--trackdir", type = "character", default = NULL,
+              help="track directory"),
+  make_option("--metadir", type="character", default=NULL,
+              help="location to write metagene files" ),
+  
+  make_option(c("-F", "--force"), action = "store_true", type="logical", default=FALSE, 
+              help="force recomputing")
+  
 ); 
 
 opt_parser = OptionParser(option_list=option_list);
@@ -79,6 +87,8 @@ params$cen = opt$options$centers
 params$CenWidth = opt$options$centerwidth
 params$NucRegionWidth = opt$options$nucwidth
 params$meta = opt$options$metagene
+
+TileWidth = opt$options$tilewidth
 if( params$meta )
   params$cen = TRUE
 params$nuc = opt$options$nucleosomes
@@ -91,14 +101,20 @@ params$DataDir = DataDir
 
 doQC = opt$options$QC
 doMeta = opt$options$metagene
+doTracks = opt$options$tracks
 
 if( !is.null(opt$options$bamdir) )
   BamDir = extendDir(opt$options$bamdir)
 
 
 MetaDir = DataDir
-if( !is.null(opt$options$Metadir) )
-  MetaDir = extendDir(opt$options$Metadir)
+if( !is.null(opt$options$metadir) )
+  MetaDir = extendDir(opt$options$metadir)
+
+TrackDir = DataDir
+if( !is.null(opt$options$trackdir) ) {
+  TrackDir = extendDir(opt$options$trackdir)
+}
 
 QCDir = DataDir
 if( !is.null(opt$options$QCdir) )
@@ -136,6 +152,11 @@ Files = opt$args
 if( doQCSum )
   QCSizeRanges = as.integer(unlist(strsplit(opt$options$sizes,",")))
 
+if( doTracks ) {
+  Tiles = tileGenome(seqinfo(SGD$Genes),tilewidth = TileWidth,cut.last.tile.in.chrom = TRUE)
+  params$cen = TRUE
+}
+
 QCSummary = list()
 Nucs = list()
 DoProcessFile <- function( x ) {
@@ -154,9 +175,11 @@ DoProcessFile <- function( x ) {
   if( doMeta ) 
     ccDoMeta(d, params, MetaDir = MetaDir)
   
-  if( doGeneSheets ) {
+  if( doGeneSheets ) 
     ccExportGeneSheet( d, params, Dir = GeneSheetsFN, type = "Genes" )
-  }
+  
+  if( doTracks ) 
+    ccExportTrack( d, params, Tiles, TrackDir)
 }
 
 ## do the work...

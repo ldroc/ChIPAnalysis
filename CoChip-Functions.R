@@ -7,7 +7,7 @@ library(corrplot)
 library(MASS)
 library(tools)
 library(GenomicAlignments)
-#library(rtracklayer)
+library(rtracklayer)
 #library(Gviz)
 #library(ggbio)
 
@@ -340,4 +340,14 @@ ccExportGeneSheet <- function( dat, param = ccParams(), Dir = NULL, type = "Gene
   colnames(A) = as.character(L[1:(length(L)-1)] - offset -1)
   df = cbind(data.frame( YName = GR$acc, Name = GR$name, Description = GR$desc), as.data.frame(A, optional = FALSE))
   write.csv(x = df, file = fname, row.names = FALSE, quote = FALSE)
+}
+
+ccExportTrack <- function( dat, params, Tiles, Dir = params$DataDir){
+  print("Exporting Track")
+  temp = Tiles
+  score(temp) = countOverlaps(Tiles,resize(dat$UniqGR,width=params$CenWidth,fix="center"))
+  params.DataDir = Dir
+  fname = ccBuildFN(dat$Name,params, suff = ".bw")
+  print(fname)
+  export( temp, fname, format="BigWig" )  
 }
