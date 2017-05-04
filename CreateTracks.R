@@ -1,4 +1,4 @@
-WorkDir = "~/Dropbox/CoChIP/coChIP-Analysis"
+WorkDir = "~/Dropbox/coChIP-scripts/"
 DataDir = getwd()
 setwd(WorkDir)
 
@@ -76,12 +76,12 @@ DoProcessFile <- function( x ) {
   temp = Tiles
   d = ccProcessFile(paste0(BamDir,"/",x), param = params)
   I = width(d$GR) > params$MinFragLen & width(d$GR) <= params$MaxFragLen 
-  GR = d$GR[I]
-  if(opt$options$width > 0 )
-    score(temp) = countOverlaps(Tiles,resize(unique(GR), width=opt$options$width,fix="center"))
-  else
-    score(temp) = countOverlaps(Tiles,unique(GR))
+  GR = unique(d$GR[I])
   
+  if(opt$options$width > 0 )
+    GR = resize(GR, width=opt$options$width,fix="center")
+  
+  score(temp) = countOverlaps(Tiles,GR)
   fname = ccBuildFN(d$Name,tparams, suff = ".bw")
   export( temp, fname, format="BigWig" )  
 }

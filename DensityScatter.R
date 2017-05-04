@@ -2,7 +2,7 @@ library(ggplot2)
 library(MASS)
 
 DensityScatter <- function( c1, c2, alpha = 0.2, title = " ", xlabel = "x", ylabel = "y", 
-                          threshold = 0.995, xlim=NULL, ylim=NULL, 
+                            threshold = 0.995, xlim=NULL, ylim=NULL, 
                             Groups = NULL, galpha=1,
                             Value = NULL,
                             logscale=FALSE, contour = TRUE,
@@ -11,6 +11,7 @@ DensityScatter <- function( c1, c2, alpha = 0.2, title = " ", xlabel = "x", ylab
                             jitter = FALSE, stat = FALSE,
                             bin = FALSE, binwidth = 0.1,
                             pointsize = 1,
+                            Cor = FALSE,
                             GroupContour = FALSE ) {
   
   # remove outliers
@@ -61,8 +62,10 @@ DensityScatter <- function( c1, c2, alpha = 0.2, title = " ", xlabel = "x", ylab
   # labels
   p = p + labs(title=title, x = xlabel, y=ylabel) 
   
-  if( diagonal)
-    p = p+geom_abline(slope=1,intercept=0, color="darkgray", size=2)
+  
+  if( diagonal ) 
+    p = p + geom_abline(slope=1,intercept=0, color="darkgray", size=2)
+
   if( !is.null(horizontal) )
     p = p+geom_hline(yintercept = as.numeric(horizontal), color="orange", size=2)
 
@@ -77,22 +80,24 @@ DensityScatter <- function( c1, c2, alpha = 0.2, title = " ", xlabel = "x", ylab
     pointcolor = "red"
   }
   
+  
   if( bin ){
-    p = p+ geom_bin2d(binwidth=binwidth) + scale_fill_distiller(palette = "YlOrBr",  values = c(0.0,0.2,0.5,1))
-  } else
-  if( !DoColor ) { 
-    if( jitter ) 
-      p = p+geom_jitter(alpha = alpha, colour=pointcolor, 
-                        height = .5, width = .5,
-                        shape=16, size=pointsize )
-    else
-      p = p+geom_point(alpha = alpha, colour=pointcolor,
-                       shape=16, size=pointsize )
+    p = p+ geom_bin2d(binwidth=binwidth) + scale_fill_distiller(palette = "YlOrBr", values = c(0.0,0.2,0.5,1))
   } else {
+    if( !DoColor ) { 
+      if( jitter ) 
+        p = p+geom_jitter(alpha = alpha, colour=pointcolor, 
+                          height = .5, width = .5,
+                          shape=16, size=pointsize )
+      else
+        p = p+geom_point(alpha = alpha, colour=pointcolor,
+                         shape=16, size=pointsize )
+    } else {
       if( jitter )
         p = p+geom_jitter(width = .5, height = .5,shape=16,size=pointsize)
-    else
+      else
         p = p+geom_point(shape=16,size=pointsize,aes(x=x,y=y,colour=g, alpha=a));
+    }
   }
   
   if( smooth || linearfit ) {
@@ -167,6 +172,12 @@ DensityScatter <- function( c1, c2, alpha = 0.2, title = " ", xlabel = "x", ylab
         p=p+geom_contour(densf, aes(x=x,y=y,z=z))
       }
     }
+  }
+  if( Cor ) {
+    r = cor(df$x,df$y, use="complete.obs")
+    if( is.null(xlim)) 
+    labeltext = sprintf("paste(italic(R), \" = %.3f\")", r)
+    p = p + annotate(geom = "text", label = labeltext, x = t1*.85, y=t2*.95, hjust = "top", vjust="right", parse=TRUE)
   }
   p = p + theme_minimal()
   

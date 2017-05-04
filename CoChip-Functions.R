@@ -174,7 +174,8 @@ ccProcessFile <- function( filename = NULL,
   
   if( param$nuc && is.null(dat$nuc) ) {
     print(paste(Name,"computing nucleosome coverage"))
-    dat$nuc = unlist(countOverlaps(resize(param$NucRegions, width=param$NucRegionWidth, fix="center"), dat$UniqGR))
+    dat$nuc = unlist(countOverlaps(resize(param$NucRegions, width=param$NucRegionWidth, fix="center"), 
+                                   resize(dat$UniqGR, width=param$NucRegionWidth, fix="center")))
     Change = TRUE
   }
   

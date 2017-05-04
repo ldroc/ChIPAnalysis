@@ -1,4 +1,5 @@
 DataDir = "~/Google Drive/CoChIPAnalysis/Turnover"
+#setwd("~/Dropbox/coChIP-scripts/")
 library(abind)
 source("CoChip-Functions.R")
 source("NucAtlas.R")
@@ -32,7 +33,7 @@ if( !exists("Data") ) {
   
   for( s in c("Flag", "Myc")) {
     NucsTime[[s]] = list()
-    for( a in c("Input", "H3K4me3", "H3K36me3", "H3K79me3")) {
+    for( a in c("Input", "H3K4me3", "H3K36me3", "H3K79me3", "Beads")) {
       TargetSet = Ab2 == a & Ab1 == s
       Val = Nucs[TargetSet,]
       rownames(Val) = Time
