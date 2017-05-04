@@ -1,4 +1,4 @@
-ACC	Name	chr	start	end	TSS	TTS	Expression	Description
+IACC	Name	chr	start	end	TSS	TTS	Expression	Description
 YAL069W		chr01	335	649	NaN	NaN	4.43	Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data
 YAL068W-A		chr01	538	792	NaN	NaN	0	Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data; identified by gene-trapping, microarray-based expression analysis, and genome-wide homology searching
 TEL01L-XC		chr01	801	337	NaN	NaN	NaN	
