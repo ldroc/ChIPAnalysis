@@ -47,8 +47,8 @@ AvgFromCollection <- function( mat, I ) {
 }
 
 
-AvgRegionsSubgroups <- function(mat, rs, subs){
-  A = lapply(subs, function(A) AvgFromCollection(mat, is.element(rs$acc, A) ) )
+AvgRegionsSubgroups <- function(mat, rs, subs, norm = 1){
+  A = lapply(subs, function(A) AvgFromCollection(mat, is.element(rs$acc, A) )*norm )
   names(A) = names(subs)
   return(A)
 }
@@ -144,7 +144,8 @@ PlotMultiCoverage <- function (Files, Gr1, Gr2, path=NULL, label1="TSS", label2=
     parparam = par()
     par(mfrow = c(2,1),mar=c(2.1,3.1,2.1,2.1))
     PlotCovergeGroups(Gr1[[i]], main=paste(label1, "aligned -", Files[i]), label=label1, pos=pos1)
-    PlotCovergeGroups(Gr2[[i]], main=paste(label2, "aligned -", Files[i]), label=label2, pos=pos2)
+    if( !is.null(Gr2) )
+      PlotCovergeGroups(Gr2[[i]], main=paste(label2, "aligned -", Files[i]), label=label2, pos=pos2)
     dev.off()
     # par(parparm)
     suppressMessages(par( mfrow = parparam$mfrow))

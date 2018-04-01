@@ -211,7 +211,7 @@ ccDoQC <- function( dat, QCDir = NULL ) {
   QCGRanges( dat$Name, dat$GR, fname )
 }
 
-ccDoMeta <- function( dat, params, MetaDir = NULL, Qs = SGD$ExprQuan[5:1], UseGenes = FALSE, NameAdd = "" ) {
+ccDoMeta <- function( dat, params, MetaDir = NULL, Qs = SGD$ExprQuan[5:1], Meta1 = "Nuc", Meta2 = "TSS", NameAdd = "", Normalize=1 ) {
   # make sure we have the data we need
   if( is.null( dat$meta) ) {
     p = ccParams()
@@ -220,15 +220,43 @@ ccDoMeta <- function( dat, params, MetaDir = NULL, Qs = SGD$ExprQuan[5:1], UseGe
     dat = ccProcessFile( dat = dat, param = p )
   }
   
-  TSS <- AvgRegionsSubgroups(dat$meta[[1]], params$TSSRegions, Qs) 
-  TTS <- AvgRegionsSubgroups(dat$meta[[2]], params$TTSRegions, Qs) 
-  Genes <- AvgRegionsSubgroups(dat$meta[[3]], params$GeneRegions,  Qs) 
-  Plus1 <- AvgRegionsSubgroups(dat$meta[[4]], params$PlusOneRegions,  Qs) 
+  TSS <- AvgRegionsSubgroups(dat$meta[[1]], params$TSSRegions, Qs, norm=Normalize) 
+  TTS <- AvgRegionsSubgroups(dat$meta[[2]], params$TTSRegions, Qs, norm=Normalize) 
+  Genes <- AvgRegionsSubgroups(dat$meta[[3]], params$GeneRegions,  Qs, norm=Normalize) 
+  Plus1 <- AvgRegionsSubgroups(dat$meta[[4]], params$PlusOneRegions,  Qs, norm=Normalize) 
 
-  if( UseGenes ) {
-    PlotMultiCoverage( list(dat$Name), list(Genes), list(TTS), path = MetaDir, PDF = T, NameAdd = NameAdd )
+  l1 = "TSS"
+  p1 = 500
+  if( Meta1 == "ORF" ) {
+    L1 = list(Genes)
   } else
-    PlotMultiCoverage( list(dat$Name), list(Plus1), list(TTS), path = MetaDir, PDF = T , NameAdd = NameAdd)
+    if( Meta1 == "TSS" ) {
+      L1 = list(TSS)
+    } else {
+      L1 = list(Plus1)
+      l1 = "N+1"
+    }
+  
+  L2 = NULL
+  l2 = "TSS"
+  p2 = 500
+  if( Meta2 == "ORF" ) {
+    L2 = list(Genes)
+  } else
+    if( Meta2 == "TSS" ) {
+      L2 = list(TSS)
+    } else
+      if( Meta2 == "Nuc" ) {
+        L2 = list(Plus1)
+        l2 = "N+1"
+      } else
+        if( Meta2 == "TTS") {
+          L2 = list(TTS)
+          l2 = "TTS"
+          p2 = 1000
+        }
+  
+  PlotMultiCoverage( list(dat$Name), L1, L2, label1 = l1, label2=l2, pos1=p1, pos2=p2, path = MetaDir, PDF = T , NameAdd = NameAdd)
 }
 
 ccPlotAlignedMatrix <- function( Dat, params, order = NULL, group = NULL, type = "TSS" ) {
@@ -296,7 +324,7 @@ ccCombineDat <- function( dat1, dat2, Name = NULL ) {
   return(dat)
 }
 
-ccExportGeneSheet <- function( dat, param = ccParams(), Dir = NULL, type = "Genes", wSize = 10 )
+ccExportGeneSheet <- function( dat, param = ccParams(), Dir = NULL, type = "ORF", wSize = 10, Normalize=1 )
 {
   if( is.null(Dir) )
     fname = dat$Name
@@ -320,12 +348,12 @@ ccExportGeneSheet <- function( dat, param = ccParams(), Dir = NULL, type = "Gene
       Meta = dat$meta[[2]]
       offset = 1000
     } else
-      if( type == "Plus1") {
+      if( type == "Nuc") {
         GR = params$PlusOneRegions
         Meta = dat$meta[[4]]
         offset = 500
       } else
-        if( type == "Genes") {
+        if( type == "ORF") {
           GR = params$GeneRegions
           offset = 500
           Meta = dat$meta[[3]]
@@ -336,17 +364,17 @@ ccExportGeneSheet <- function( dat, param = ccParams(), Dir = NULL, type = "Gene
   N = dim(Meta)[[1]]
   M = dim(Meta)[[2]]
   L = seq( 1, M, by = wSize)
-  A = do.call(cbind, lapply(1:(length(L)-1), function(i) rowMeans(Meta[,L[[i]]:(L[[i+1]]-1)])))
+  A = do.call(cbind, lapply(1:(length(L)-1), function(i) Normalize*rowMeans(Meta[,L[[i]]:(L[[i+1]]-1)])))
   rownames(A) = GR$acc
   colnames(A) = as.character(L[1:(length(L)-1)] - offset -1)
   df = cbind(data.frame( YName = GR$acc, Name = GR$name, Description = GR$desc), as.data.frame(A, optional = FALSE))
   write.csv(x = df, file = fname, row.names = FALSE, quote = FALSE)
 }
 
-ccExportTrack <- function( dat, params, Tiles, Dir = params$DataDir){
+ccExportTrack <- function( dat, params, Tiles, Dir = params$DataDir, Normalize=1) {
   print("Exporting Track")
   temp = Tiles
-  score(temp) = countOverlaps(Tiles,resize(dat$UniqGR,width=params$CenWidth,fix="center"))
+  score(temp) = countOverlaps(Tiles,resize(dat$UniqGR,width=params$CenWidth,fix="center"))*Normalize
   params.DataDir = Dir
   fname = ccBuildFN(dat$Name,params, suff = ".bw")
   print(fname)

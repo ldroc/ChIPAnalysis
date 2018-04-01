@@ -175,9 +175,9 @@ DensityScatter <- function( c1, c2, alpha = 0.2, title = " ", xlabel = "x", ylab
   }
   if( Cor ) {
     r = cor(df$x,df$y, use="complete.obs")
-    if( is.null(xlim)) 
-    labeltext = sprintf("paste(italic(R), \" = %.3f\")", r)
-    p = p + annotate(geom = "text", label = labeltext, x = t1*.85, y=t2*.95, hjust = "top", vjust="right", parse=TRUE)
+#    if( is.null(xlim) ) 
+      labeltext = sprintf("paste(italic(R), \" = %.3f\")", r)
+    p = p + annotate(geom = "text", label = labeltext, x = t1*.85, y=t2*.95, hjust = "top", vjust="left", parse=TRUE)
   }
   p = p + theme_minimal()
   

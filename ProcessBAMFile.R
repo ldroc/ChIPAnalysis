@@ -1,11 +1,15 @@
 #!/usr/bin/env Rscript --vanilla
-WorkDir = "~/Dropbox/coChIP-scripts"
+#
 #Find where are the scripts at
-initial.options <- commandArgs(trailingOnly = FALSE)
-#file.arg.name <- 
-#script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
-#WorkDir <- dirname(script.name)
 
+
+initial.options <- commandArgs(trailingOnly = FALSE)
+if( !any(grepl("--interactive", initial.options)) ) {
+  file.arg.name <- "--file="
+  script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
+  WorkDir <- dirname(script.name)
+} else
+  WorkDir = "~/Dropbox/coChIP-scripts" 
 
 DataDir = getwd()
 OrigDir = getwd()
@@ -21,15 +25,8 @@ extendDir <- function(x) {
     return(paste0(OrigDir,"/",x))
 }
 
-print("Initializing")
-setwd(WorkDir)
-suppressMessages(source("CoChip-Functions.R"))
-suppressMessages(source("NucAtlas.R"))
-GetSGDandNucs()
-setwd(DataDir)
 
 suppressMessages(library("optparse"))
-
 option_list = list(
   make_option(c("-q", "--QC"), action = "store_true", type="logical", default=FALSE, 
               help="run QC"),
@@ -73,7 +70,12 @@ option_list = list(
               help="track directory"),
   make_option("--metadir", type="character", default=NULL,
               help="location to write metagene files" ),
-  
+  make_option("--normalize", type="character", default = NULL,
+              help="file name with normalization constants"),
+  make_option("--meta1type", type="character", default="Nuc",
+              help="Alignment type for 1st meta Nuc (default), TSS, TTS, or ORF"),
+  make_option("--meta2type", type="character", default="Nuc",
+              help="Alignment type for 2nd meta Nuc, TSS, TTS (default), ORF, or NULL"),
   make_option(c("-F", "--force"), action = "store_true", type="logical", default=FALSE, 
               help="force recomputing")
   
@@ -81,6 +83,15 @@ option_list = list(
 
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser, positional_arguments = TRUE);
+
+print("Initializing")
+setwd(WorkDir)
+suppressMessages(source("CoChip-Functions.R"))
+suppressMessages(source("NucAtlas.R"))
+GetSGDandNucs()
+setwd(DataDir)
+
+
 ## prepere SGD/nuc structures
 
 
@@ -124,6 +135,7 @@ if( !is.null(opt$options$metadir) )
 TrackDir = DataDir
 if( !is.null(opt$options$trackdir) ) {
   TrackDir = extendDir(opt$options$trackdir)
+  print(paste("TrackDir = ", TrackDir))
 }
 
 QCDir = DataDir
@@ -164,6 +176,11 @@ if( !is.null(opt$options$genesheet)) {
   params$cen = TRUE
 }
 
+if( !is.null(opt$options$normalize)) {
+  NormalizeValue = read.table(file = extendDir(opt$options$normalize), header = FALSE)
+} else
+  NormalizeValue = NULL
+
 Files = opt$args
 
 if( doQCSum )
@@ -178,6 +195,20 @@ QCSummary = list()
 Nucs = list()
 DoProcessFile <- function( x ) {
   d = ccProcessFile(paste0(BamDir,"/",x), param = params, Force = Force)
+
+  Norm = 1
+  if( !is.null(NormalizeValue) ) {
+    x = sub("\\..*$","",x)
+    i = grep(paste0("^",x,"(.\\w)*$"),NormalizeValue[,1])
+    if( is.vector(i)|| is.list(i))
+      i = i[1]
+    print(i)
+    if( !is.na(i) && i > 0 ) {
+      Norm = NormalizeValue[i,2]
+      print(paste(d$name, "normalize by", Norm))
+    }
+  }
+  
   if( doQC ) 
     ccDoQC(d, QCDir)
   if( doQCSum ){
@@ -190,13 +221,13 @@ DoProcessFile <- function( x ) {
   }
   
   if( doMeta ) 
-    ccDoMeta(d, params, MetaDir = MetaDir)
+    ccDoMeta(d, params, MetaDir = MetaDir, Meta1 = opt$options$meta1type, Meta2=opt$options$meta2type, Normalize = Norm)
   
   if( doGeneSheets ) 
-    ccExportGeneSheet( d, params, Dir = GeneSheetsFN, type = "Genes" )
+    ccExportGeneSheet( d, params, Dir = GeneSheetsFN, type = "TSS", Normalize=Norm )
   
   if( doTracks ) 
-    ccExportTrack( d, params, Tiles, TrackDir)
+    ccExportTrack( d, params, Tiles, Dir=TrackDir, Normalize=Norm)
 }
 
 ## do the work...

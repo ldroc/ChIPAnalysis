@@ -66,7 +66,7 @@ ReadPairedBAMFile <- function( BAMFile, param ) {
   #legalread = !is.na(bam[[1]]$pos) & !is.na(bam[[1]]$mpos)
   
   # hist(len, main=BAMFile, breaks="FD")
-  GR <- granges(readGAlignmentPairs(BAMFile,param=param))
+  GR <- granges(readGAlignmentPairs(BAMFile,param=param),on.discordant.seqnames="drop")
   l <- seqlevels(GR)
   fl <- as.character(sapply(l, FixChrName))
   sn <- factor( as.vector(seqnames(GR)), l, labels=fl)
