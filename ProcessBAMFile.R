@@ -1,7 +1,9 @@
-#!/usr/bin/env Rscript --vanilla
+#!/usr/bin/Rscript --vanilla
 #
 #Find where are the scripts at
-
+.libPaths("/usr/lib/R/site-library")
+.libPaths("/cs/bd/tools/nflab_env/R")
+WorkDir =  "/cs/bd/tools/ChIPAnalysis"
 
 initial.options <- commandArgs(trailingOnly = FALSE)
 if( !any(grepl("--interactive", initial.options)) ) {
@@ -14,7 +16,6 @@ if( !any(grepl("--interactive", initial.options)) ) {
 DataDir = getwd()
 OrigDir = getwd()
 BamDir = paste0(DataDir,"/BAM")
-
 
 
 extendDir <- function(x) {
